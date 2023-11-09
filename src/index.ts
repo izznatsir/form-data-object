@@ -8,7 +8,7 @@ export interface PreprocessFormDataWithZodFuncArgs<S extends ZodRawShape> {
 	};
 }
 
-export function preprocessFormDataWithZod<S extends ZodRawShape>({
+export function preprocessFormDataForZod<S extends ZodRawShape>({
 	formData,
 	schema,
 	options,

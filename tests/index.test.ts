@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import { z } from "zod";
-import { preprocessFormDataWithZod } from "~/index";
+import { preprocessFormDataForZod } from "~/index";
 
 test("should preprocess properties with literal values.", async ({
 	expect,
@@ -35,5 +35,14 @@ test("should preprocess properties with literal values.", async ({
 		picture: z.instanceof(File),
 	});
 
-	const formDataObject = preprocessFormDataWithZod({ formData, schema });
+	const formDataObject = preprocessFormDataForZod({ formData, schema });
+
+	expect(formDataObject).toMatchObject({
+		name: "Silver Spoon",
+		quantity: 48,
+		isDiscontinued: true,
+		tags: ["kitchen", "utensils"],
+		extras: { lengthMm: 100, weightGram: 50 },
+		picture: formData.get("picture"),
+	});
 });
