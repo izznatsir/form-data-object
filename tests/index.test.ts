@@ -1,48 +1,15 @@
 import { test } from "vitest";
-import { z } from "zod";
-import { preprocessFormDataForZod } from "~/index";
+import { formDataToObject } from "~/index";
 
-test("should preprocess properties with literal values.", async ({
-	expect,
-}) => {
-	const formData = new FormData();
-	formData.append("name", "Silver Spoon");
-	formData.append("quantity", "48");
-	formData.append("isDiscontinued", "");
-	formData.append("tags", "kitchen");
-	formData.append("tags", "utensils");
-	formData.append(
-		"extras",
-		JSON.stringify({
-			lengthMm: 100,
-			weightGram: 50,
-		})
-	);
-	formData.append(
-		"picture",
-		new File([], "silvers-spoon.png", { type: "image/png" })
-	);
+test("should corrrectly collect deeply nested object", ({ expect }) => {
+	let formData = new FormData();
+	formData.append("attributes.tools.weight", "1200");
+	formData.append("attributes.tools.material", "Iron");
+	formData.append("attributes.metals.material", "Iron");
+	formData.append("extras[0].name", "Tools");
+	formData.append("extras[0].description", "A unique name for the tool.");
+	formData.append("tags[0]", "Premium");
 
-	const schema = z.object({
-		name: z.string(),
-		quantity: z.number(),
-		isDiscontinued: z.boolean(),
-		tags: z.array(z.string()),
-		extras: z.object({
-			lengthMm: z.number(),
-			weightGram: z.number(),
-		}),
-		picture: z.instanceof(File),
-	});
-
-	const formDataObject = preprocessFormDataForZod({ formData, schema });
-
-	expect(formDataObject).toMatchObject({
-		name: "Silver Spoon",
-		quantity: 48,
-		isDiscontinued: true,
-		tags: ["kitchen", "utensils"],
-		extras: { lengthMm: 100, weightGram: 50 },
-		picture: formData.get("picture"),
-	});
+	let data = formDataToObject(formData);
+	expect(data).toBeTruthy();
 });

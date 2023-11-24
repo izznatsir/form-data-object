@@ -1,97 +1,52 @@
-import { type ZodObject, type ZodRawShape } from "zod";
+let INDEX_ACCESS_REGEX = /\[\d+\]$/;
 
-export interface PreprocessFormDataWithZodFuncArgs<S extends ZodRawShape> {
-	formData: FormData;
-	schema: ZodObject<S>;
-	options?: {
-		true?: string;
-	};
-}
+/**
+ * Arrange FormData entries into a proper object.
+ * Supports nested object and array by parsing the entry name:
+ *
+ * - "category.weight" -> { category: { weight: ... }}
+ * - "attributes[0].name" -> { attributes: [ { name: ... } ] }
+ */
+export function formDataToObject(
+	formData: FormData | IterableIterator<[string, FormDataEntryValue]>
+) {
+	let data: Record<string, any> = {};
+	let fields = formData instanceof FormData ? formData.entries() : formData;
+	let field = fields.next();
 
-export function preprocessFormDataForZod<S extends ZodRawShape>({
-	formData,
-	schema,
-	options,
-}: PreprocessFormDataWithZodFuncArgs<S>): Record<
-	number | string | symbol,
-	unknown
-> {
-	if (schema._def.typeName !== "ZodObject")
-		throw new TypeError(
-			"Schema type other than `ZodObject` is not supported."
-		);
+	while (!field.done) {
+		let [key, value] = field.value;
+		let parent: Record<string, any> = data;
+		let segments = key.split(".");
 
-	const properties = Object.entries(schema._def.shape());
+		for (let i = 0; i < segments.length; i++) {
+			let segment = segments[i];
+			let indexAccess = INDEX_ACCESS_REGEX.exec(segment)?.at(0);
 
-	const object: Record<number | string | symbol, unknown> = {};
-	for (const [key, { _def }] of properties) {
-		switch (_def.typeName) {
-			case "ZodArray": {
-				const values = formData.getAll(key).map((value) => {
-					switch (_def.type._def.typeName) {
-						case "ZodBoolean": {
-							return value === (options?.true || "");
-						}
-						case "ZodEffects": {
-							if (value instanceof File) return value;
-							return;
-						}
-						case "ZodNumber": {
-							return Number(value);
-						}
-						case "ZodString": {
-							return String(value);
-						}
-						case "ZodObject": {
-							if (typeof value === "string")
-								try {
-									return JSON.parse(value);
-								} catch {}
+			if (indexAccess) {
+				segment = segment.slice(0, -indexAccess!.length);
 
-							return;
-						}
-						default: {
-							throw new TypeError(
-								"Array in an array or object in an object are not supported."
-							);
-						}
-					}
-				});
-				object[key] = values;
-				break;
-			}
-			case "ZodBoolean": {
-				const value = formData.get(key);
-				object[key] = value === (options?.true || "");
-				break;
-			}
-			case "ZodEffects": {
-				const value = formData.get(key);
-				if (value instanceof File) object[key] = value;
-				break;
-			}
-			case "ZodNumber": {
-				object[key] = Number(formData.get(key));
-				break;
-			}
-			case "ZodObject": {
-				let value;
-				const json = formData.get(key);
+				if (!parent[segment]) parent[segment] = [];
+				let index = Number(indexAccess!.slice(1, -1));
 
-				if (typeof json === "string")
-					try {
-						value = JSON.parse(json);
-					} catch {}
-
-				object[key] = value;
-				break;
-			}
-			case "ZodString": {
-				object[key] = String(formData.get(key));
-				break;
+				if (i < segments.length - 1) {
+					if (!parent[segment][index]) parent[segment][index] = {};
+					parent = parent[segment][index];
+				} else {
+					parent[segment][index] = value;
+				}
+			} else {
+				if (i < segments.length - 1) {
+					if (!parent[segment]) parent[segment] = {};
+					parent = parent[segment];
+				} else {
+					parent[segment] = value;
+				}
 			}
 		}
+
+		field = fields.next();
 	}
 
-	return object;
+	return data;
 }
