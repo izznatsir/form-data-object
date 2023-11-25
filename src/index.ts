@@ -39,6 +39,10 @@ export function formDataToObject(
 				if (i < segments.length - 1) {
 					if (!parent[segment]) parent[segment] = {};
 					parent = parent[segment];
+				} else if (parent[segment]) {
+					if (!Array.isArray(parent[segment]))
+						parent[segment] = [parent[segment]];
+					parent[segment].push(value);
 				} else {
 					parent[segment] = value;
 				}
