@@ -1,3 +1,3 @@
-# `zod-formdata-transform`
+# `form-data-object`
 
-Transform `FormData` into an object based on a `zod schema`.
+Arrange `FormData` entries into a proper object.
