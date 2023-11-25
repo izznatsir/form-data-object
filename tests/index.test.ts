@@ -1,5 +1,5 @@
 import { test } from "vitest";
-import { formDataToObject } from "~/index";
+import { entriesToObject } from "~/index";
 
 test("should corrrectly create object from form data with nested objects and array of objects.", ({
 	expect,
@@ -13,8 +13,8 @@ test("should corrrectly create object from form data with nested objects and arr
 	formData.append("tags[0]", "Premium");
 	formData.append("tags", "Limited");
 
-	let data = formDataToObject(formData);
-	console.log(data);
+	let data = entriesToObject(formData);
+
 	expect(data).toEqual({
 		attributes: {
 			tools: {

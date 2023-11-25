@@ -11,6 +11,7 @@
 		},
 		"skipLibCheck": true,
 		"strict": true,
+		"target": "esnext",
 		"verbatimModuleSyntax": true
 	},
 	"include": ["**/*.ts"]
