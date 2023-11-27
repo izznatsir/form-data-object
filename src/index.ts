@@ -21,8 +21,9 @@ export function entriesToObject(
 
 		for (let i = 0; i < segments.length; i++) {
 			let segment = segments[i];
-			let indexAccess = INDEX_ACCESS_REGEX.exec(segment)?.at(0);
+			if (!segment) continue;
 
+			let indexAccess = INDEX_ACCESS_REGEX.exec(segment)?.at(0);
 			if (indexAccess) {
 				segment = segment.slice(0, -indexAccess!.length);
 
